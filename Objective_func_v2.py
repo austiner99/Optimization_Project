@@ -234,7 +234,7 @@ def genetic_algorithm(f, num, perc, roll, tol, gen_limit):
         ## Crossover ##
         # Produce perc_offspring% offspring
         offspring = []
-        while len(offspring) < number_people * perc_offspring:
+        while len(offspring) < number_offspring:
             # Randomly select two parents
             indices = np.random.choice(len(parents), size=2, replace=False)  # Sample indices
             parent1, parent2 = parents[indices[0]], parents[indices[1]]  # Select parents using indices
@@ -295,14 +295,14 @@ def print_keyboard_layout(x):
 # Optimize
 #---------------------------------
 # Parameters
-number_of_people = 20 # Number of people in the population
+number_of_people = 200 # Number of people in the population
 number_of_offspring = 4 # Number of offspring per pair of parents
 
 percentage_clone = 0.1  # Percentage of the population to clone (top 10%)
 percentage_parents = 0.5  # Percentage of the population to use as parents (top 50%)
 percentage_offspring = 0.9  # Percentage of the population to be offspring (90% of the population)
 
-tol = 50
+tol = 30
 
 gen_limit = 10000
 
