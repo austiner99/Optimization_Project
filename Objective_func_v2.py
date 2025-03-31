@@ -206,7 +206,6 @@ def genetic_algorithm(f, num, perc, roll, tol, gen_limit):
         # Extract sorted population and fitness results
         sorted_population = [x[0] for x in sorted_data]
         best_score, best_counter = sorted_data[0][1]
-        print("Best Score:", best_score)  # Print the best score for the current generation
 
         # Store the best individual data
         best_individuals.append(sorted_population[0])
@@ -217,6 +216,8 @@ def genetic_algorithm(f, num, perc, roll, tol, gen_limit):
         if best_score < history_best_score:
             history_best_score = best_score
             best_score_unchanged_count = 0  # Reset the counter if the best score improves
+            print("Best Score:", best_score)  # Print the best score for the current generation
+            print(print_keyboard_layout(sorted_population[0]))
         else:
             best_score_unchanged_count += 1  # Increment the counter if the best score remains unchanged
 
@@ -294,18 +295,18 @@ def print_keyboard_layout(x):
 # Optimize
 #---------------------------------
 # Parameters
-number_of_people = 100 # Number of people in the population
+number_of_people = 20 # Number of people in the population
 number_of_offspring = 4 # Number of offspring per pair of parents
 
 percentage_clone = 0.1  # Percentage of the population to clone (top 10%)
 percentage_parents = 0.5  # Percentage of the population to use as parents (top 50%)
 percentage_offspring = 0.9  # Percentage of the population to be offspring (90% of the population)
 
-tol = 10
+tol = 50
 
-gen_limit = 20
+gen_limit = 10000
 
-roll_dice_mutation = 0.2
+roll_dice_mutation = 0.3
 roll_dice_parent = (1 - roll_dice_mutation) / 2
 
 # Make sure the values are valid
@@ -327,29 +328,33 @@ best_individuals, best_scores, best_counters = genetic_algorithm(objective_funct
 #---------------------------------
 # Print & Plot Results
 #---------------------------------
-# Print all scores
-for i, score in enumerate(best_scores):
-    print(f"Best Score {i + 1}: {score}")
-for i, counter in enumerate(best_counters):
-    print(f"Counter {i + 1}: {counter}")
-# for i, individual in enumerate(best_individuals):
-    # print(f"Individual {i + 1}: {individual}")
-# Print all keyboard layouts
-for i, individual in enumerate(best_individuals):
-    print(f"Keyboard Layout {i + 1}:")
-    print_keyboard_layout(individual)
-    print()
+# Print results only when the score changes
+previous_score = None
+generations = []
+filtered_best_scores = []
+# Header for Results
+print("\n" + "="*40)
+print("Genetic Algorithm Optimization Results")
+print("="*40 + "\n")
 
-    # Create a convergence graph
-    generations = range(1, len(best_scores) + 1)
+for i, (score, counter, individual) in enumerate(zip(best_scores, best_counters, best_individuals)):
+    if score != previous_score:
+        print(f"Generation {i + 1}:")
+        print(f"Best Score: {score}")
+        print(f"Counter: {counter}")
+        print_keyboard_layout(individual)
+        print()
+        previous_score = score
+        generations.append(i + 1)  # Track the generation for the convergence graph
+        filtered_best_scores.append(score)  # Track the best score only when it changes
 
 plt.figure(figsize=(10, 6))
-plt.plot(generations, best_scores, marker='o', linestyle='-', color='b')
+plt.plot(generations, filtered_best_scores, marker='o', linestyle='-', color='b')
 plt.xlabel('Generation')
 plt.ylabel('Best Score')
 plt.title('Convergence Graph')
 plt.grid(True)
-plt.xticks(generations)  # Ensure all generations are labeled on the x-axis
+plt.locator_params(axis='x', nbins=10)  # Limit the number of x-axis grid lines to 10
 plt.savefig('genetic_conv.png')  # Save the figure as genetic_conv.png
 plt.show()
 
