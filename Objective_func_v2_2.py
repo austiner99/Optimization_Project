@@ -264,7 +264,7 @@ string = "The sun’s warm glow fell across the field. A breeze stirred, rustlin
 # Optimize
 #---------------------------------
 # Parameters
-number_of_people = 50 # Number of people in the population
+number_of_people = 10000 # Number of people in the population
 number_of_offspring = 10 # Number of offspring per pair of parents
 
 percentage_clone = 0.1  # Percentage of the population to clone (top 10%)
@@ -273,9 +273,9 @@ percentage_offspring = 0.9  # Percentage of the population to be offspring (90% 
 
 tol = 500
 
-gen_limit = 10000
+gen_limit = 100000
 
-roll_dice_mutation = 0.2
+roll_dice_mutation = 0.3
 roll_dice_parent = (1 - roll_dice_mutation) / 2
 
 # Make sure the values are valid
