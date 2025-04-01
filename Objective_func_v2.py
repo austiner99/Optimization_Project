@@ -295,14 +295,14 @@ def print_keyboard_layout(x):
 # Optimize
 #---------------------------------
 # Parameters
-number_of_people = 200 # Number of people in the population
+number_of_people = 10 # Number of people in the population
 number_of_offspring = 4 # Number of offspring per pair of parents
 
 percentage_clone = 0.1  # Percentage of the population to clone (top 10%)
 percentage_parents = 0.5  # Percentage of the population to use as parents (top 50%)
 percentage_offspring = 0.9  # Percentage of the population to be offspring (90% of the population)
 
-tol = 30
+tol = 20
 
 gen_limit = 10000
 

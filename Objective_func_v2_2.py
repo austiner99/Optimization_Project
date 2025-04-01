@@ -18,67 +18,13 @@ Notes:
 #---------------------------------
 import numpy as np
 import matplotlib.pyplot as plt
-from multiprocessing import Pool
+from pathos.multiprocessing import ProcessingPool as Pool
+import heapq
 
 
 #---------------------------------
 # Functions
 #---------------------------------
-
-def string_to_index_optimized(string):
-    # Vectorized approach for string-to-index conversion
-    string = string.lower().replace(" ", "")
-    char_map = {chr(i + 97): i for i in range(26)}
-    char_map.update({'.': 26, ',': 27, '?': 28, "'": 29})
-    return np.array([char_map.get(char, -1) for char in string])
-    
-def objective_function_optimized(x, string_index):
-    home_positions = np.array([[1.5, 2], [3.5, 2.5], [5.5, 2.5], [7.5, 2.5]])  # Predefine finger positions
-    penalties = [0.5, 0, 0, 0]  # Pinky, Ring, Middle, Index penalties
-    same_finger_penalty = 0.5
-    
-    # Initialize counters
-    finger_counts = [0, 0, 0, 0]  # Pinky, Ring, Middle, Index
-    same_finger_penalty_count = 0
-    score = 0
-    
-    prev_active_finger = -1
-    prev_finger_position = np.inf
-    
-    for key in string_index:
-        next_finger_position = x[key]
-        if next_finger_position[0] <= 2:
-            next_active_finger = 0
-        elif next_finger_position[0] <= 4:
-            next_active_finger = 1
-        elif next_finger_position[0] <= 6:
-            next_active_finger = 2
-        else:
-            next_active_finger = 3
-
-        # Apply penalties
-        active_finger_penalty = penalties[next_active_finger]
-        finger_counts[next_active_finger] += 1
-        
-        # Same finger penalty logic
-        if prev_active_finger == next_active_finger:
-            same_finger_penalty_count += 1
-            same_finger_penalty_value = same_finger_penalty
-        else:
-            same_finger_penalty_value = 0
-
-        # Calculate distance
-        current_finger_position = home_positions[next_active_finger] if prev_active_finger != next_active_finger else prev_finger_position
-        distance = ((current_finger_position[0] - next_finger_position[0])**2 + (current_finger_position[1] - next_finger_position[1])**2)**0.5
-        
-        # Update score
-        score += distance + active_finger_penalty + same_finger_penalty_value
-        
-        # Update previous finger position and active finger
-        prev_active_finger = next_active_finger
-        prev_finger_position = next_finger_position
-    
-    return score, finger_counts
 
 def generate_individual():  
     # Initialize person 
@@ -113,44 +59,100 @@ def parallel_objective_function(args):
     x, string_index = args
     return objective_function_optimized(x, string_index)
 
-def generate_offspring(parents, number_offspring, roll_dice_parent):
+def string_to_index_optimized(string):
+    # Vectorized approach for string-to-index conversion
+    string = string.lower().replace(" ", "")
+    char_map = {chr(i + 97): i for i in range(26)}
+    char_map.update({'.': 26, ',': 27, '?': 28, "'": 29})
+    return np.array([char_map.get(char, -1) for char in string])
+    
+def objective_function_optimized(x, string_index):
+    home_positions = np.array([[1.5, 2], [3.5, 2.5], [5.5, 2.5], [7.5, 2.5]])  # Predefine finger positions
+    penalties = [0.5, 0, 0, 0]  # Pinky, Ring, Middle, Index penalties
+    same_finger_penalty = 0.5
+    
+    # Initialize counters
+    finger_counts = [0, 0, 0, 0, 0]  # Pinky, Ring, Middle, Index, Same Finger
+    score = 0
+    
+    prev_active_finger = -1
+    prev_finger_position = np.inf
+    
+    for key in string_index:
+        next_finger_position = x[key]
+        if next_finger_position[0] <= 2:
+            next_active_finger = 0
+        elif next_finger_position[0] <= 4:
+            next_active_finger = 1
+        elif next_finger_position[0] <= 6:
+            next_active_finger = 2
+        else:
+            next_active_finger = 3
+
+        # Apply penalties
+        active_finger_penalty = penalties[next_active_finger]
+        finger_counts[next_active_finger] += 1
+        
+        # Same finger penalty logic
+        if prev_active_finger == next_active_finger:
+            finger_counts[-1] += 1
+            same_finger_penalty_value = same_finger_penalty
+        else:
+            same_finger_penalty_value = 0
+
+        # Calculate distance
+        current_finger_position = home_positions[next_active_finger] if prev_active_finger != next_active_finger else prev_finger_position
+        distance = ((current_finger_position[0] - next_finger_position[0])**2 + (current_finger_position[1] - next_finger_position[1])**2)**0.5
+        
+        # Update score
+        score += distance + active_finger_penalty + same_finger_penalty_value
+        
+        # Update previous finger position and active finger
+        prev_active_finger = next_active_finger
+        prev_finger_position = next_finger_position
+    
+    return score, finger_counts
+
+def generate_offspring(parents, number_people, number_offspring, perc_offspring, roll_dice_parent):
     offspring = []
-    while len(offspring) < number_offspring:
+    while len(offspring) < number_people * perc_offspring:
         # Randomly select two parents
         indices = np.random.choice(len(parents), size=2, replace=False)  # Sample indices
         parent1, parent2 = parents[indices[0]], parents[indices[1]]  # Select parents using indices
 
-        # Create offspring from the two parents
-        child = np.zeros_like(parent1)  # Initialize empty offspring
+        # Each pair produces number_offspring offspring
+        for _ in range(number_offspring):  # Each pair produces number_offspring offspring
 
-        used_keys = set()  # Track which key positions have been used
+            # Create offspring from the two parents
+            child = np.zeros_like(parent1)  # Initialize empty offspring
+            used_keys = set()  # Track which key positions have been used
 
-        while len(used_keys) < 30:  # Ensure all keys are assigned
-            for i in range(30):
-                if tuple(child[i]) in used_keys:  # Skip if already used
-                    continue
+            while len(used_keys) < 30:  # Ensure all keys are assigned
+                for i in range(30):
+                    if tuple(child[i]) in used_keys:  # Skip if already used
+                        continue
 
-                rand = np.random.rand()  # Generate a random number between 0 and 1
+                    rand = np.random.rand()  # Generate a random number between 0 and 1
 
-                # Choose parent or mutation based on probability
-                if rand < roll_dice_parent:  
-                    if tuple(parent1[i]) not in used_keys:
-                        child[i] = parent1[i]  # Inherit from parent1
-                        used_keys.add(tuple(parent1[i]))
-                elif rand < (2 * roll_dice_parent):  
-                    if tuple(parent2[i]) not in used_keys:
-                        child[i] = parent2[i]  # Inherit from parent2
-                        used_keys.add(tuple(parent2[i]))
-                else:  
-                    while True:  # Generate a random position if mutation occurs
-                        x_val = np.random.randint(1, 9)
-                        y_val = np.random.randint(1, 4) if x_val <= 2 else np.random.randint(1, 5)
-                        if (x_val, y_val) not in used_keys:
-                            child[i] = [x_val, y_val]  # Assign new random position
-                            used_keys.add((x_val, y_val))
-                            break
+                    # Choose parent or mutation based on probability
+                    if rand < roll_dice_parent:  
+                        if tuple(parent1[i]) not in used_keys:
+                            child[i] = parent1[i]  # Inherit from parent1
+                            used_keys.add(tuple(parent1[i]))
+                    elif rand < (2 * roll_dice_parent):  
+                        if tuple(parent2[i]) not in used_keys:
+                            child[i] = parent2[i]  # Inherit from parent2
+                            used_keys.add(tuple(parent2[i]))
+                    else:  
+                        while True:  # Generate a random position if mutation occurs
+                            x_val = np.random.randint(1, 9)
+                            y_val = np.random.randint(1, 4) if x_val <= 2 else np.random.randint(1, 5)
+                            if (x_val, y_val) not in used_keys:
+                                child[i] = [x_val, y_val]  # Assign new random position
+                                used_keys.add((x_val, y_val))
+                                break
 
-        offspring.append(child)  # Add the child to the offspring list
+            offspring.append(child)  # Add the child to the offspring list
 
     return offspring
 
@@ -174,15 +176,17 @@ def genetic_algorithm_optimized(f, num, perc, roll, tol, gen_limit, string_index
 
     while gen_counter < gen_limit:
         gen_counter += 1
-        print("Generation:", gen_counter)
 
         # Parallel fitness evaluation using Pool
         with Pool() as pool:
             fitness_results = pool.map(parallel_objective_function, [(p, string_index) for p in population])
-        
-        sorted_data = sorted(zip(population, fitness_results), key=lambda x: x[1][0])
-        sorted_population = [x[0] for x in sorted_data]
-        best_score, best_counter = sorted_data[0][1]
+
+        # Partial sort (percentage_clone)
+        top_k = int(number_people * max(perc_clone, perc_parents))
+        best_individuals_data = heapq.nsmallest(top_k, zip(population, fitness_results), key=lambda x: x[1][0])
+
+        sorted_population = [x[0] for x in best_individuals_data]
+        best_score, best_counter = best_individuals_data[0][1]
         
         # Store the best individual data
         best_individuals.append(sorted_population[0])
@@ -193,7 +197,9 @@ def genetic_algorithm_optimized(f, num, perc, roll, tol, gen_limit, string_index
         if best_score < history_best_score:
             history_best_score = best_score
             best_score_unchanged_count = 0
+            print("Generation:", gen_counter)
             print("Best Score:", best_score)
+            print_keyboard_layout(sorted_population[0])
         else:
             best_score_unchanged_count += 1
 
@@ -205,7 +211,7 @@ def genetic_algorithm_optimized(f, num, perc, roll, tol, gen_limit, string_index
         parents = sorted_population[:int(number_people * perc_parents)]
 
         ## Crossover ##
-        offspring = generate_offspring(parents, number_offspring, roll_dice_parent)
+        offspring = generate_offspring(parents, number_people, number_offspring, perc_offspring, roll_dice_parent)
 
         population = clone + offspring
 
@@ -258,27 +264,30 @@ string = "The sun’s warm glow fell across the field. A breeze stirred, rustlin
 # Optimize
 #---------------------------------
 # Parameters
-number_of_people = 200 # Number of people in the population
-number_of_offspring = 4 # Number of offspring per pair of parents
+number_of_people = 50 # Number of people in the population
+number_of_offspring = 10 # Number of offspring per pair of parents
 
 percentage_clone = 0.1  # Percentage of the population to clone (top 10%)
-percentage_parents = 0.5  # Percentage of the population to use as parents (top 50%)
+percentage_parents = 0.2  # Percentage of the population to use as parents (top 50%)
 percentage_offspring = 0.9  # Percentage of the population to be offspring (90% of the population)
 
-tol = 20
+tol = 500
 
 gen_limit = 10000
 
-roll_dice_mutation = 0.3
+roll_dice_mutation = 0.2
 roll_dice_parent = (1 - roll_dice_mutation) / 2
 
 # Make sure the values are valid
 if percentage_clone + percentage_offspring != 1:
     raise ValueError("The sum of percentage_clone and percentage_offspring must equal 1. Please adjust the values.")
 
-if number_of_people - number_of_people * percentage_clone > number_of_offspring * number_of_people * percentage_parents / 2:
+#      900 > 1000  Not true, good!     1000 - 1000 * 0.1  > 4 * 1000 * 0.5 / 2 
+#      900 > 1000                      1000 - 1000 * 0.1  > 10 * 1000 * 0.2 / 2 
+offspring_needed = number_of_people - number_of_people * percentage_clone
+offspring_produced = number_of_offspring * number_of_people * percentage_parents / 2
+if offspring_needed > offspring_produced:
     raise ValueError("The number of people after cloning is too small to produce the required offspring. Please adjust the values.")
-
 
 
 num = np.array([number_of_people, number_of_offspring])
