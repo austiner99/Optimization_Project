@@ -234,7 +234,7 @@ def genetic_algorithm(f, num, perc, roll, tol, gen_limit):
         ## Crossover ##
         # Produce perc_offspring% offspring
         offspring = []
-        while len(offspring) < number_offspring:
+        while len(offspring) < number_people * perc_offspring:
             # Randomly select two parents
             indices = np.random.choice(len(parents), size=2, replace=False)  # Sample indices
             parent1, parent2 = parents[indices[0]], parents[indices[1]]  # Select parents using indices
@@ -267,7 +267,7 @@ def genetic_algorithm(f, num, perc, roll, tol, gen_limit):
                                     break
 
                 offspring.append(child)
-                if len(offspring) >= number_offspring:
+                if len(offspring) >= number_people * perc_offspring:
                     break
         
         population = clone + offspring  # Combine parents and offspring

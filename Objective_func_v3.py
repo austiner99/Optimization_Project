@@ -294,7 +294,13 @@ num = np.array([number_of_people, number_of_offspring])
 perc = np.array([percentage_clone, percentage_parents, percentage_offspring])
 roll = np.array([roll_dice_parent, roll_dice_mutation])  # Roll the dice method for parent selection and mutation
 
-best_individuals, best_scores, best_counters = genetic_algorithm_optimized(objective_function_optimized, num, perc, roll, tol, gen_limit, string_to_index_optimized(string))
+
+
+#FIXME
+ws_group_size = 20  # Number of warm start individuals
+
+for i in range(ws_group_size)
+    best_individuals, best_scores, best_counters = genetic_algorithm_optimized(objective_function_optimized, num, perc, roll, tol, gen_limit, string_to_index_optimized(string))
 
 
 #---------------------------------
