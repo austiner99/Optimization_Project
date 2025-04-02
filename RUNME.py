@@ -1,30 +1,27 @@
 '''
-The purpose of this code is...
-
+Purpose:
+    Find the optimal layout of a keyboard using a genetic algorithm. 
 
 Authors:
  - Austin Erickson "The Brain"
  - Isaac Detiege "The Muscle"
  - Ammon Miller "The Milkman" (Copilot generated, lol)
 
-Last updated: 3/27/2025 around 3pm
+Last updated: 
+    4/02/2025 
 
 Notes:
 - Roll the dice method (40% p1, 40% p2, 20% mutation)
 
-- This function calls on
 '''
-#---------------------------------
-# Import 
-#---------------------------------
-# import numpy as np
-import matplotlib.pyplot as plt
-from pathos.multiprocessing import ProcessingPool as Pool
-import heapq
-import parameters as P
-from string_paragraph import string, string_to_index_optimized
-import generate_func as gen_func
 
+# Import
+from parameters import num, perc, roll, tol, gen_limit
+from string_paragraph import string_index as string
+from genetic_algorithm import genetic_algorithm_optimized as genetic_algorithm
+from Objective_func_v3 import parallel_objective_function as obj
 
-print(string_to_index_optimized(string))
-
+# Optimize
+if __name__ == '__main__': # Necessary to run multiprocessing on Windows
+  
+    data = genetic_algorithm(obj, num, perc, roll, tol, gen_limit, string)

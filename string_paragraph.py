@@ -38,3 +38,5 @@ def string_to_index_optimized(string):
     char_map = {chr(i + 97): i for i in range(26)}
     char_map.update({'.': 26, ',': 27, '?': 28, "'": 29})
     return np.array([char_map.get(char, -1) for char in string])
+
+string_index = string_to_index_optimized(string)
