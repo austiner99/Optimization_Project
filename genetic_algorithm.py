@@ -8,7 +8,7 @@ from functions import generate_population, generate_offspring, print_keyboard_la
 from warm_start import population_warm_start
 
 
-def genetic_algorithm_optimized(f, warm_start, num, perc, roll, tol, gen_limit, string_index):
+def genetic_algorithm_optimized(f, warm_start, num, perc, roll, tol, gen_limit, string_index, print_while_running):
     number_people = num[0]
     number_offspring = num[1]
     perc_clone = perc[0]
@@ -52,9 +52,10 @@ def genetic_algorithm_optimized(f, warm_start, num, perc, roll, tol, gen_limit, 
         if best_score < history_best_score:
             history_best_score = best_score
             best_score_unchanged_count = 0
-            print("Generation:", gen_counter)
-            print("Best Score:", best_score)
-            print_keyboard_layout(sorted_population[0])
+            if print_while_running:
+                print("Generation:", gen_counter)
+                print("Best Score:", best_score)
+                print_keyboard_layout(sorted_population[0])
         else:
             best_score_unchanged_count += 1
 

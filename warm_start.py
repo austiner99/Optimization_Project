@@ -2,76 +2,86 @@ import numpy as np
 import pickle
 from functions import print_keyboard_layout
 
-
-FILENAME = "Optimization_Project/warm_start_data.npy"
+INDIVIDUALS_FILE = "Optimization_Project/warm_start_individuals.npy"
+SCORES_FILE = "Optimization_Project/warm_start_scores.npy"
+COUNTERS_FILE = "Optimization_Project/warm_start_counters.npy"
 MAX_PARENTS = 100  # Keep only the top 100 individuals
 
 def load_warm_start():
-    """Load the warm start list from a file as a NumPy array."""
+    """Load individuals, scores, and counters from separate files."""
     try:
-        parents = np.load(FILENAME, allow_pickle=True)
-        if parents.ndim == 0:  # Handle cases where loading a single object
-            return np.array([], dtype=object)
-        return parents
+        individuals = np.load(INDIVIDUALS_FILE, allow_pickle=True)
+        scores = np.load(SCORES_FILE, allow_pickle=True)
+        counters = np.load(COUNTERS_FILE, allow_pickle=True)
+        return individuals, scores, counters
     except FileNotFoundError:
-        return np.array([], dtype=object)  # Return empty array if no file exists
+        return np.array([], dtype=object), np.array([], dtype=float), np.array([], dtype=int)
 
-def save_warm_start(parents):
-    """Save the top 100 parents to a file."""
-    np.save(FILENAME, parents, allow_pickle=True)
+def save_warm_start(individuals, scores, counters):
+    """Save individuals, scores, and counters to separate files."""
+    np.save(INDIVIDUALS_FILE, individuals, allow_pickle=True)
+    np.save(SCORES_FILE, scores, allow_pickle=True)
+    np.save(COUNTERS_FILE, counters, allow_pickle=True)
 
-def update_warm_start(new_individual):
-    """Insert a new individual if it's better than the worst in the list."""
-    parents = load_warm_start()
+def update_warm_start(new_individual, new_score, new_counter):
+    """Insert a new individual, score, and counter if it's better than the worst in the list."""
+    individuals, scores, counters = load_warm_start()
 
-    # Ensure parents is a 2D object array for correct stacking
-    if parents.size == 0:
-        parents = np.array([new_individual], dtype=object)  # Treat new_individual as an object
-    else:
-        # Stack the new individual properly
-        parents = np.vstack([parents, new_individual])
+    # Append the new individual, score, and counter
+    individuals = np.append(individuals, [new_individual], axis=0) if individuals.size > 0 else np.array([new_individual], dtype=object)
+    scores = np.append(scores, new_score)
+    counters = np.append(counters, new_counter)
 
-    # Keep only the best 100 individuals (sorted by fitness)
-    if parents.shape[0] > MAX_PARENTS:
-        # Sort by fitness (assuming fitness is at index 1)
-        sorted_indices = np.argsort([p[1] for p in parents])  
-        parents = parents[sorted_indices[:MAX_PARENTS]]  # Keep top 100
+    # Sort by scores (ascending) on every run
+    sorted_indices = np.argsort(scores)
+    individuals = individuals[sorted_indices]
+    scores = scores[sorted_indices]
+    counters = counters[sorted_indices]
 
-    save_warm_start(parents)
+    # Keep only the best 100 individuals if exceeding MAX_PARENTS
+    if len(scores) > MAX_PARENTS:
+        individuals = individuals[:MAX_PARENTS]
+        scores = scores[:MAX_PARENTS]
+        counters = counters[:MAX_PARENTS]
+
+    save_warm_start(individuals, scores, counters)
     print("Updated warm start list")
 
-
-
 def stats_warm_start():
-    parents = load_warm_start()
+    individuals, scores, counters = load_warm_start()
 
-    if parents.size == 0:
+    if len(scores) == 0:
         raise ValueError("Warm start list is empty.")
-    elif parents.size == 1:
+    elif len(scores) == 1:
         raise ValueError("Warm start list has only one individual.")
-    else:    
+    else:
+        print("=" * 40)
         print("Warm Start List Statistics:")
-        print("Number of individuals:", len(parents))
-        print("Best individual:", parents[0][1])
+        print("=" * 40)
+        print(scores)
+        print("Number of individuals:", len(scores))
+        print("Best individual score:", scores[0])
+        print("Worst individual score:", scores[-1])
         print("Best keyboard layout:")
-        print_keyboard_layout(parents[0][0])  # Assuming p[0] is the keyboard layout
-        print("Worst individual:", parents[-1][1])
+        print_keyboard_layout(individuals[0]) 
         print("Worst keyboard layout:")
-        print_keyboard_layout(parents[-1][0])  # Assuming p[0] is the keyboard layout
-        print("Average fitness:", np.mean([p[1] for p in parents]))  # Assuming p[1] is fitness
+        print_keyboard_layout(individuals[-1])
+        print("Average fitness:", np.mean(scores))
 
 def population_warm_start(number_people, roll_dice_parent):
     population = []
-    parents = load_warm_start()
-    number_offspring = number_people // (len(parents) // 2)  # Calculate the number of offspring
+    individuals, scores, counters = load_warm_start()
+    number_offspring = number_people // (len(individuals) // 2)  # Calculate the number of offspring
+    if number_offspring == 0:
+        number_offspring = 1
+
     while len(population) < number_people:
         # Randomly select two parents
-        indices = np.random.choice(len(parents), size=2, replace=False)  # Sample indices
-        parent1, parent2 = parents[indices[0]], parents[indices[1]]  # Select parents using indices
+        indices = np.random.choice(len(individuals), size=2, replace=False)  # Sample indices
+        parent1, parent2 = individuals[indices[0]], individuals[indices[1]]  # Select parents using indices
 
         # Each pair produces number_offspring offspring
-        for _ in range(number_offspring):  # Each pair produces number_offspring offspring
-
+        for _ in range(number_offspring):
             # Create offspring from the two parents
             child = np.zeros_like(parent1)  # Initialize empty offspring
             used_keys = set()  # Track which key positions have been used
@@ -84,15 +94,15 @@ def population_warm_start(number_people, roll_dice_parent):
                     rand = np.random.rand()  # Generate a random number between 0 and 1
 
                     # Choose parent or mutation based on probability
-                    if rand < roll_dice_parent:  
+                    if rand < roll_dice_parent:
                         if tuple(parent1[i]) not in used_keys:
                             child[i] = parent1[i]  # Inherit from parent1
                             used_keys.add(tuple(parent1[i]))
-                    elif rand < (2 * roll_dice_parent):  
+                    elif rand < (2 * roll_dice_parent):
                         if tuple(parent2[i]) not in used_keys:
                             child[i] = parent2[i]  # Inherit from parent2
                             used_keys.add(tuple(parent2[i]))
-                    else:  
+                    else:
                         while True:  # Generate a random position if mutation occurs
                             x_val = np.random.randint(1, 9)
                             y_val = np.random.randint(1, 4) if x_val <= 2 else np.random.randint(1, 5)

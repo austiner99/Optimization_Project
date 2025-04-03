@@ -27,12 +27,17 @@ from warm_start import update_warm_start, stats_warm_start
 # Optimize
 if __name__ == '__main__': # Necessary to run multiprocessing on Windows
   
-    warm_start = False
+    warm_start = True               # True - generates first population from best previous individuals
+    print_while_running = False     # True - prints generation, score, and layout data while running
+    print_results = False           # True - prints results after running
+    convergence = False             # True - plots convergence graph
     # if warm_start:
 
-    # stats_warm_start()
-    data = genetic_algorithm(obj, warm_start, num, perc, roll, tol, gen_limit, string)
-    best_individuals, best_scores, best_counters = data
-    best_data = [best_individuals[-1], best_scores[-1], best_counters[-1]]
-    update_warm_start(best_data)
-    print_plot_results(data)
+    stats_warm_start()
+    for i in range(50):
+        data = genetic_algorithm(obj, warm_start, num, perc, roll, tol, gen_limit, string, print_while_running)
+        best_individuals, best_scores, best_counters = data
+        update_warm_start(best_individuals[-1], best_scores[-1], best_counters[-1])
+        print_plot_results(data, print_results, convergence)
+        print("Generation:", i + 1)
+    stats_warm_start()
