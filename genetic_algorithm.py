@@ -4,10 +4,11 @@ This module...
 # Import necessary libraries
 import heapq
 from pathos.multiprocessing import ProcessingPool as Pool
-from functions import generate_population_parallel, generate_offspring, print_keyboard_layout
+from functions import generate_population, generate_offspring, print_keyboard_layout
+from warm_start import population_warm_start
 
 
-def genetic_algorithm_optimized(f, num, perc, roll, tol, gen_limit, string_index):
+def genetic_algorithm_optimized(f, warm_start, num, perc, roll, tol, gen_limit, string_index):
     number_people = num[0]
     number_offspring = num[1]
     perc_clone = perc[0]
@@ -16,7 +17,11 @@ def genetic_algorithm_optimized(f, num, perc, roll, tol, gen_limit, string_index
     roll_dice_parent = roll[0]
     roll_dice_mutation = roll[1]
 
-    population = generate_population_parallel(number_people)
+    if warm_start:
+        population = population_warm_start(number_people, roll_dice_parent)
+    else:
+        population = generate_population(number_people)
+
     best_score_unchanged_count = 0
     history_best_score = float('inf')
     best_individuals = []
@@ -64,5 +69,7 @@ def genetic_algorithm_optimized(f, num, perc, roll, tol, gen_limit, string_index
         offspring = generate_offspring(parents, number_people, number_offspring, perc_offspring, roll_dice_parent)
 
         population = clone + offspring
+    
+    data = (best_individuals, best_scores, best_counters)
 
-    return best_individuals, best_scores, best_counters
+    return data

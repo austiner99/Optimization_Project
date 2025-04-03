@@ -3,6 +3,7 @@ This module...
 '''
 # Import necessary libraries
 import numpy as np
+import matplotlib.pyplot as plt
 from pathos.multiprocessing import ProcessingPool as Pool
 
 
@@ -26,7 +27,7 @@ def generate_individual(_):
                 break
     return person
 
-def generate_population_parallel(num_people):
+def generate_population(num_people):
     # Use a Pool to generate individuals in parallel
     with Pool() as pool:
         population = pool.map(generate_individual, range(num_people))
@@ -89,3 +90,37 @@ def print_keyboard_layout(x):
     for i in range(4):
         row = f"{4-i}| " + " ".join(layout[i])  # Adjust row numbering
         print(row)
+
+def print_plot_results(data):
+    # Unpack data
+    best_individuals, best_scores, best_counters = data
+
+    # Print results only when the score changes
+    previous_score = None
+    generations = []
+    filtered_best_scores = []
+    # Header for Results
+    print("\n" + "="*40)
+    print("Genetic Algorithm Optimization Results")
+    print("="*40 + "\n")
+
+    for i, (score, counter, individual) in enumerate(zip(best_scores, best_counters, best_individuals)):
+        if score != previous_score:
+            print(f"Generation {i + 1}:")
+            print(f"Best Score: {score}")
+            print(f"Counter: {counter}")
+            print_keyboard_layout(individual)
+            print()
+            previous_score = score
+            generations.append(i + 1)  # Track the generation for the convergence graph
+            filtered_best_scores.append(score)  # Track the best score only when it changes
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(generations, filtered_best_scores, marker='o', linestyle='-', color='b')
+    plt.xlabel('Generation')
+    plt.ylabel('Best Score')
+    plt.title('Convergence Graph')
+    plt.grid(True)
+    plt.locator_params(axis='x', nbins=10)  # Limit the number of x-axis grid lines to 10
+    plt.savefig('Optimization_Project/plots/genetic_conv.png')  # Save the figure as genetic_conv.png
+    plt.show()
