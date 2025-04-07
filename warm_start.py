@@ -45,28 +45,41 @@ def update_warm_start(new_individual, new_score, new_counter):
         counters = counters[:MAX_PARENTS]
 
     save_warm_start(individuals, scores, counters)
+    print()
     print("Updated warm start list")
 
-def stats_warm_start():
+def stats_warm_start(num_print):
     individuals, scores, counters = load_warm_start()
 
     if len(scores) == 0:
-        raise ValueError("Warm start list is empty.")
+        print("Warm start list is empty.")
     elif len(scores) == 1:
-        raise ValueError("Warm start list has only one individual.")
+        print("Warm start list has only one individual.")
     else:
         print("=" * 40)
         print("Warm Start List Statistics:")
         print("=" * 40)
         print(scores)
-        print("Number of individuals:", len(scores))
-        print("Best individual score:", scores[0])
-        print("Worst individual score:", scores[-1])
-        print("Best keyboard layout:")
-        print_keyboard_layout(individuals[0]) 
-        print("Worst keyboard layout:")
-        print_keyboard_layout(individuals[-1])
-        print("Average fitness:", np.mean(scores))
+        if num_print > 1:
+            print(f"Top {num_print} scores and layouts:")
+            for i in range(min(num_print, len(scores))):
+                print(f"Score {i + 1}: {scores[i]}")
+                print("Keyboard layout:")
+                print_keyboard_layout(individuals[i])
+
+            print("Worst score and layout:")
+            print(f"Score: {scores[-1]}")
+            print("Keyboard layout:")
+            print_keyboard_layout(individuals[-1])
+        else:
+            print("Number of individuals:", len(scores))
+            print("Best individual score:", scores[0])
+            print("Worst individual score:", scores[-1])
+            print("Average fitness:", np.mean(scores))
+            print("Best keyboard layout:")
+            print_keyboard_layout(individuals[0]) 
+            print("Worst keyboard layout:")
+            print_keyboard_layout(individuals[-1])
 
 def population_warm_start(number_people, roll_dice_parent):
     population = []

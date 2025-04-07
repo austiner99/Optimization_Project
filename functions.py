@@ -91,7 +91,7 @@ def print_keyboard_layout(x):
         row = f"{4-i}| " + " ".join(layout[i])  # Adjust row numbering
         print(row)
 
-def print_plot_results(data, print_results, convergence):
+def print_plot_results(data, program_number, num_programs, print_results_long, print_results_short, warm_start, convergence):
     # Unpack data
     best_individuals, best_scores, best_counters = data
 
@@ -100,15 +100,16 @@ def print_plot_results(data, print_results, convergence):
     generations = []
     filtered_best_scores = []
 
-    if print_results:
+    if print_results_long or print_results_short:
         # Header for Results
         print("\n" + "="*40)
+        print(f"{program_number} of {num_programs}             Warm Start: {warm_start}")
         print("Genetic Algorithm Optimization Results")
         print("="*40 + "\n")
 
     for i, (score, counter, individual) in enumerate(zip(best_scores, best_counters, best_individuals)):
         if score != previous_score:
-            if print_results:
+            if print_results_long:
                 print(f"Generation {i + 1}:")
                 print(f"Best Score: {score}")
                 print(f"Counter: {counter}")
@@ -117,6 +118,13 @@ def print_plot_results(data, print_results, convergence):
             previous_score = score
             generations.append(i + 1)  # Track the generation for the convergence graph
             filtered_best_scores.append(score)  # Track the best score only when it changes
+
+    if print_results_short:
+        print("Best Score:", best_scores[-1])
+        print("Counter:", best_counters[-1])
+        print("Best Keyboard Layout:")
+        print_keyboard_layout(best_individuals[-1])
+        print()
 
     if convergence:
         plt.figure(figsize=(10, 6))

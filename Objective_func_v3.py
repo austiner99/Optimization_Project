@@ -24,7 +24,7 @@ from pathos.multiprocessing import ProcessingPool as Pool
 def parallel_objective_function(args):
     x, string_index = args
     home_positions = np.array([[1.5, 2], [3.5, 2.5], [5.5, 2.5], [7.5, 2.5]])  # Predefine finger positions
-    penalties = [0.5, 0, 0, 0]  # Pinky, Ring, Middle, Index penalties
+    penalties = [0.5, 0.2, 0, 0]  # Pinky, Ring, Middle, Index penalties
     same_finger_penalty = 0.5
     
     # Initialize counters

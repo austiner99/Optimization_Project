@@ -27,17 +27,25 @@ from warm_start import update_warm_start, stats_warm_start
 # Optimize
 if __name__ == '__main__': # Necessary to run multiprocessing on Windows
   
-    warm_start = True               # True - generates first population from best previous individuals
-    print_while_running = False     # True - prints generation, score, and layout data while running
-    print_results = False           # True - prints results after running
-    convergence = False             # True - plots convergence graph
-    # if warm_start:
+    warm_start = True              # True - generates first population from best previous individuals
+    print_while_running = False    # True - prints generation, score, and layout data while running
+    print_results_long = False     # True - prints long results after running
+    print_results_short = True     # True - prints short results after running
+    convergence = False            # True - plots convergence graph
+    run = False                    # True - runs the program, False runs just stats_warm_start()
 
-    stats_warm_start()
-    for i in range(50):
-        data = genetic_algorithm(obj, warm_start, num, perc, roll, tol, gen_limit, string, print_while_running)
-        best_individuals, best_scores, best_counters = data
-        update_warm_start(best_individuals[-1], best_scores[-1], best_counters[-1])
-        print_plot_results(data, print_results, convergence)
-        print("Generation:", i + 1)
-    stats_warm_start()
+    stats_warm_start(5)
+    if run:
+        num_programs = 1 # Number of programs to run
+        for i in range(num_programs):
+            # Alternate warm_start between odd and even iterations
+            warm_start = (i % 2 == 0)
+
+            # Optimization via genetic algorithm
+            data = genetic_algorithm(obj, warm_start, num, perc, roll, tol, gen_limit, string, print_while_running)
+
+            # Unpack data
+            best_individuals, best_scores, best_counters = data
+            update_warm_start(best_individuals[-1], best_scores[-1], best_counters[-1])
+            print_plot_results(data, i+1, num_programs, print_results_long, print_results_short, warm_start, convergence)
+
